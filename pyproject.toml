@@ -1,0 +1,39 @@
+[project]
+name = "cybersorted-mcp"
+version = "0.1.0"
+description = "CyberSorted MCP Server - AI-powered security tools via any MCP client"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "mcp[cli]>=1.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "stripe>=11.0",
+    "google-cloud-firestore>=2.19",
+    "google-cloud-secret-manager>=2.20",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "httpx>=0.28",
+    "dnspython>=2.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "ruff>=0.8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
