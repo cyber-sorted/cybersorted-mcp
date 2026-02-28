@@ -35,8 +35,11 @@ Thumbs.db
 
 # GCP
 gcloud-service-key.json
-credentials/
 *.json.key
+
+# Credentials (allow WIF config — it contains no secrets)
+credentials/*
+!credentials/gcp-wif-config.json
 
 # Terraform
 terraform/.terraform/

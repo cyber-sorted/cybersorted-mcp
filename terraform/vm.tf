@@ -5,6 +5,7 @@ resource "azurerm_public_ip" "mcp" {
   resource_group_name = azurerm_resource_group.mcp.name
   allocation_method   = "Static"
   sku                 = "Standard"
+  zones               = ["1"]
   domain_name_label   = "cybersorted-mcp-${var.environment}"
 
   tags = azurerm_resource_group.mcp.tags
@@ -32,6 +33,7 @@ resource "azurerm_linux_virtual_machine" "mcp" {
   location            = azurerm_resource_group.mcp.location
   resource_group_name = azurerm_resource_group.mcp.name
   size                = var.vm_size
+  zone                = "1"
 
   admin_username                  = var.admin_username
   disable_password_authentication = true
@@ -55,6 +57,10 @@ resource "azurerm_linux_virtual_machine" "mcp" {
     offer     = "ubuntu-24_04-lts"
     sku       = "server"
     version   = "latest"
+  }
+
+  identity {
+    type = "SystemAssigned"
   }
 
   custom_data = base64encode(file("${path.module}/../scripts/init-vm.sh"))
