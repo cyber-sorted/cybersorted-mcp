@@ -1,0 +1,17 @@
+# Azure subscription
+subscription_id = "your-azure-subscription-id"
+
+# SSH access
+admin_ssh_public_key = "ssh-rsa AAAA... user@host"
+allowed_ssh_cidr     = "203.0.113.0/32"  # Your office/home IP
+
+# Environment
+environment = "prod"
+region      = "uksouth"
+vm_size     = "Standard_B2ms"
+
+# GCP project (for Firestore/GCS credentials on the VM)
+gcp_project = "cybersorted-prod"
+
+# Domain
+domain = "mcp.cybersorted.io"

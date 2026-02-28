@@ -63,7 +63,7 @@ app = FastAPI(
 
 @app.get("/health")
 async def health() -> dict:
-    """Health check endpoint for Cloud Run."""
+    """Health check endpoint."""
     return {
         "status": "healthy",
         "service": "cybersorted-mcp",

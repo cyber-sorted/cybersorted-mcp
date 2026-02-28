@@ -2,14 +2,14 @@
 
 ## Overview
 
-MCP server providing AI-powered security tools to any MCP client (Claude, Copilot, Cursor). Hosted on Cloud Run at `mcp.cybersorted.io`. Part of the CyberSorted platform.
+MCP server providing AI-powered security tools to any MCP client (Claude, Copilot, Cursor). Hosted on an Azure VM (B2ms, UK South) at `mcp.cybersorted.io`. Part of the CyberSorted platform.
 
 Tool groups:
 - **Pen testing** -- recon, scanning, exploitation, reporting (Sprint 1+)
 - **CISO advisory** -- security frameworks, policies, risk assessment (future)
 - **CTO advisory** -- architecture review, tech health, cloud diagrams (future)
 
-**Sprint 1 scope:** Passive recon only (free tier). No Cloud Run Jobs or workers yet.
+**Sprint 1 scope:** Passive recon only (free tier). No worker containers yet.
 
 ## Running Locally
 
@@ -25,6 +25,7 @@ uvicorn src.server:app --reload --port 8080
 - `STRIPE_SECRET_KEY` -- Stripe secret key for subscription validation
 - `ENVIRONMENT` -- `dev` / `stage` / `prod` (default: `dev`)
 - `PORT` -- Server port (default: `8080`)
+- `GOOGLE_APPLICATION_CREDENTIALS` -- Path to GCP service account JSON key
 
 ## Firestore Collections
 
@@ -35,15 +36,29 @@ uvicorn src.server:app --reload --port 8080
 
 ```
 MCP Client (Claude / Copilot / Cursor)
-    | MCP protocol (Streamable HTTP)
-    | Authorization: Bearer cs_live_xxx
-    v
-Cloud Run Service: mcp.cybersorted.io
-  - FastAPI + MCP SDK (FastMCP)
-  - Auth middleware (API key -> Firestore -> Stripe)
-  - Usage tracking + limit enforcement
-  - Tools: recon_passive (Sprint 1)
+    │ MCP protocol (Streamable HTTP)
+    │ Authorization: Bearer cs_live_xxx
+    ▼
+Azure VM (UK South): mcp.cybersorted.io
+  nginx (TLS + rate limiting + reverse proxy)
+    ▼
+  mcp-server container (FastAPI + MCP SDK)
+    │
+    ▼
+  GCP (cybersorted-prod): Firestore + GCS
 ```
+
+## Infrastructure
+
+| Component | Technology |
+|-----------|-----------|
+| VM | Azure B2ms (2 vCPU, 8 GB RAM), Ubuntu 24.04 LTS |
+| Region | UK South |
+| IaC | Terraform (`terraform/`) |
+| Container orchestration | Docker Compose |
+| TLS | Let's Encrypt via certbot |
+| Reverse proxy | nginx |
+| Backend data | GCP Firestore + GCS (via service account key) |
 
 ## Key Files
 
@@ -54,6 +69,26 @@ Cloud Run Service: mcp.cybersorted.io
 | `src/tools/recon/passive.py` | `recon_passive` tool implementation |
 | `src/core/config.py` | Pydantic Settings configuration |
 | `src/core/usage.py` | Usage tracking + tier limit enforcement |
+| `docker-compose.yml` | nginx + mcp-server container orchestration |
+| `nginx/nginx.conf` | TLS termination, rate limiting, reverse proxy |
+| `terraform/` | Azure VM infrastructure (Terraform) |
+| `scripts/init-vm.sh` | Cloud-init: Docker, firewall, fail2ban |
+| `scripts/setup-tls.sh` | Let's Encrypt certificate provisioning |
+
+## Deployment
+
+```bash
+# Provision Azure VM
+cd terraform && terraform init && terraform plan && terraform apply
+
+# SSH into VM and deploy
+ssh cybersorted@<vm-ip>
+cd /app
+git clone git@github.com:cyber-sorted/cybersorted-mcp.git .
+cp .env.example .env  # Edit with production values
+sudo ./scripts/setup-tls.sh
+docker compose up -d
+```
 
 ## Full Design
 
@@ -67,12 +102,4 @@ Use UK English in all user-facing text, documentation, and comments.
 
 ```bash
 python -m pytest tests/
-```
-
-## Deployment
-
-```bash
-gcloud builds submit --config=cloudbuild.yaml \
-  --project=cybersorted-dev \
-  --substitutions=_ENVIRONMENT=dev
 ```
