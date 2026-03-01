@@ -10,7 +10,14 @@ services:
       - certbot-webroot:/var/www/certbot:ro
     depends_on:
       - mcp-server
+      - fluent-bit
     restart: unless-stopped
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: docker.nginx
+        fluentd-async: "true"
 
   mcp-server:
     build:
@@ -23,6 +30,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "8080"
+    depends_on:
+      - fluent-bit
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -30,6 +39,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: docker.mcp-server
+        fluentd-async: "true"
+
+  # Fluent Bit — ships container logs to GCP Cloud Logging
+  fluent-bit:
+    image: fluent/fluent-bit:3
+    ports:
+      - "24224:24224"
+    volumes:
+      - ./fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - ./credentials:/fluent-bit/credentials:ro
+    restart: unless-stopped
 
   # Certbot for TLS certificate renewal
   certbot:
