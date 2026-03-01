@@ -22,14 +22,13 @@ uvicorn src.server:app --reload --port 8080
 
 - `GCP_PROJECT` -- GCP project ID (default: `cybersorted-dev`)
 - `FIRESTORE_DATABASE` -- Firestore named database (default: `database-uk-dev`)
-- `STRIPE_SECRET_KEY` -- Stripe secret key for subscription validation
 - `ENVIRONMENT` -- `dev` / `stage` / `prod` (default: `dev`)
 - `PORT` -- Server port (default: `8080`)
-- `GOOGLE_APPLICATION_CREDENTIALS` -- Path to GCP service account JSON key
+- `GOOGLE_APPLICATION_CREDENTIALS` -- Path to GCP WIF config (Workload Identity Federation)
 
 ## Firestore Collections
 
-- `mcp-api-keys/{key_hash}` -- API key records (tier, stripe_customer_id, stripe_subscription_id, domains, created_at, active)
+- `mcp-api-keys/{key_hash}` -- API key records (tier, domains, created_at, active). Managed by the APP server via Stripe webhooks.
 - `mcp-usage/{api_key_id}/monthly/{YYYY-MM}` -- Monthly usage counters per tool
 
 ## Architecture

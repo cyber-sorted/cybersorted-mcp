@@ -14,9 +14,6 @@ class Settings(BaseSettings):
     GCP_PROJECT: str = "cybersorted-dev"
     FIRESTORE_DATABASE: str = "database-uk-dev"
 
-    # Stripe
-    STRIPE_SECRET_KEY: str = ""
-
     # Server
     ENVIRONMENT: str = "dev"
     PORT: int = 8080

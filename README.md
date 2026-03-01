@@ -38,10 +38,9 @@ python -m pytest tests/
 |----------|-------------|---------|
 | `GCP_PROJECT` | GCP project ID | `cybersorted-dev` |
 | `FIRESTORE_DATABASE` | Firestore database name | `database-uk-dev` |
-| `STRIPE_SECRET_KEY` | Stripe secret key | -- |
 | `ENVIRONMENT` | `dev` / `stage` / `prod` | `dev` |
 | `PORT` | Server port | `8080` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to GCP service account JSON | -- |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to GCP WIF config or SA JSON | -- |
 
 ## Authentication
 
@@ -51,7 +50,7 @@ Requests require an API key via the `Authorization` header:
 Authorization: Bearer cs_live_xxx
 ```
 
-API keys are looked up in Firestore (`mcp-api-keys`) and validated against a Stripe subscription.
+API keys are looked up in Firestore (`mcp-api-keys`). The APP server manages subscriptions via Stripe webhooks and keeps the `mcp-api-keys` collection in sync — the MCP server trusts Firestore as the source of truth.
 
 ## Tiers
 

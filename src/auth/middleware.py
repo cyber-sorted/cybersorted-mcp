@@ -3,7 +3,7 @@
 Flow:
   1. Extract Bearer token from Authorization header (cs_live_xxx or cs_test_xxx)
   2. Hash the key and look up in Firestore mcp-api-keys/{key_hash}
-  3. Validate Stripe subscription is active
+  3. Check the record is active (APP manages subscription state via Stripe webhooks)
   4. Return tier (free/pro/enterprise) and usage limits
 """
 
@@ -12,7 +12,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 
-import stripe
 from google.cloud import firestore
 
 from src.core.config import settings
@@ -33,8 +32,6 @@ class AuthContext:
 
     api_key_id: str
     tier: str  # free, pro, enterprise
-    stripe_customer_id: str | None
-    stripe_subscription_id: str | None
     domains: list[str]  # authorised target domains
     max_domains: int
 
@@ -54,6 +51,10 @@ def _get_db() -> firestore.Client:
 async def authenticate_request(authorization: str | None) -> AuthContext:
     """Authenticate an API key and return the auth context.
 
+    The APP server manages subscriptions via Stripe and keeps the
+    mcp-api-keys collection in sync via webhooks. The MCP server
+    trusts Firestore as the source of truth — no direct Stripe calls.
+
     Args:
         authorization: The Authorization header value (Bearer cs_live_xxx).
 
@@ -61,7 +62,7 @@ async def authenticate_request(authorization: str | None) -> AuthContext:
         AuthContext with tier, domains, and limits.
 
     Raises:
-        AuthError: If the key is missing, invalid, or subscription is inactive.
+        AuthError: If the key is missing, invalid, or inactive.
     """
     if not authorization:
         raise AuthError("Missing Authorization header. Use: Bearer cs_live_xxx")
@@ -87,22 +88,6 @@ async def authenticate_request(authorization: str | None) -> AuthContext:
         raise AuthError("API key is inactive.")
 
     tier = data.get("tier", "free")
-    stripe_subscription_id = data.get("stripe_subscription_id")
-
-    # Validate Stripe subscription for paid tiers
-    if tier in ("pro", "enterprise") and stripe_subscription_id:
-        if settings.STRIPE_SECRET_KEY:
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            try:
-                subscription = stripe.Subscription.retrieve(stripe_subscription_id)
-                if subscription.status not in ("active", "trialing"):
-                    raise AuthError(
-                        "Stripe subscription is not active. "
-                        f"Current status: {subscription.status}",
-                        status_code=403,
-                    )
-            except stripe.StripeError as e:
-                raise AuthError(f"Stripe validation failed: {e}", status_code=500)
 
     # Domain limits by tier
     max_domains = {"free": 1, "pro": 5, "enterprise": 999}
@@ -110,8 +95,6 @@ async def authenticate_request(authorization: str | None) -> AuthContext:
     return AuthContext(
         api_key_id=key_hash,
         tier=tier,
-        stripe_customer_id=data.get("stripe_customer_id"),
-        stripe_subscription_id=stripe_subscription_id,
         domains=data.get("domains", []),
         max_domains=max_domains.get(tier, 1),
     )
