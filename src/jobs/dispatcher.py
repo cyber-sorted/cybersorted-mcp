@@ -70,6 +70,12 @@ async def launch_worker(
             "Please wait for a running scan to complete."
         )
 
+    # Mount credentials directory so workers can authenticate to GCP
+    credentials_dir = str(settings.CREDENTIALS_PATH).rsplit("/", 1)[0]
+    volumes = {
+        credentials_dir: {"bind": "/app/credentials", "mode": "ro"},
+    }
+
     try:
         container = client.containers.run(
             image=image,
@@ -80,6 +86,7 @@ async def launch_worker(
             mem_limit=mem_limit,
             nano_cpus=cpu_count * 1_000_000_000,  # Docker API uses nanocpus
             network_mode="bridge",
+            volumes=volumes,
             labels={
                 "cybersorted.job_id": job_id,
                 "cybersorted.role": "worker",
