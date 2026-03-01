@@ -6,7 +6,7 @@ resource "azurerm_public_ip" "mcp" {
   allocation_method   = "Static"
   sku                 = "Standard"
   zones               = ["1"]
-  domain_name_label   = "cybersorted-mcp-${var.environment}"
+  domain_name_label   = "cs-mcp-${var.environment}"
 
   tags = azurerm_resource_group.mcp.tags
 }

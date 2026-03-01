@@ -10,7 +10,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "cybersorted-tfstate"
-    storage_account_name = "cybersortedtfstate"
+    storage_account_name = "csmcptfstate"
     container_name       = "tfstate"
     key                  = "mcp-server.tfstate"
   }
