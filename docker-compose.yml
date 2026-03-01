@@ -48,7 +48,7 @@ services:
 
   # Fluent Bit — ships container logs to GCP Cloud Logging
   fluent-bit:
-    image: fluent/fluent-bit:3
+    image: fluent/fluent-bit:3.2
     ports:
       - "24224:24224"
     volumes:
