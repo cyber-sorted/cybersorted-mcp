@@ -48,6 +48,8 @@ async def create_job(
     api_key_id: str | None = None,
     company_id: str | None = None,
     scan_id: str | None = None,
+    source_firestore_project: str | None = None,
+    source_firestore_database: str | None = None,
 ) -> PentestJob:
     """Create a new pentest job in Firestore.
 
@@ -63,6 +65,8 @@ async def create_job(
         api_key_id=api_key_id,
         company_id=company_id,
         scan_id=scan_id,
+        source_firestore_project=source_firestore_project,
+        source_firestore_database=source_firestore_database,
     )
 
     db = _get_db()

@@ -47,24 +47,24 @@ class TestSyncToSecurityScan:
     async def test_skips_if_no_company_id(self):
         job = _make_job(company_id=None)
 
-        with patch("src.jobs.bridge._get_db") as mock_get_db:
+        with patch("src.jobs.bridge._get_bridge_db") as mock_get_bridge_db:
             await sync_to_security_scan(job)
-            mock_get_db.assert_not_called()
+            mock_get_bridge_db.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_skips_if_no_scan_id(self):
         job = _make_job(scan_id=None)
 
-        with patch("src.jobs.bridge._get_db") as mock_get_db:
+        with patch("src.jobs.bridge._get_bridge_db") as mock_get_bridge_db:
             await sync_to_security_scan(job)
-            mock_get_db.assert_not_called()
+            mock_get_bridge_db.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_syncs_queued_status(self):
         mock_db, mock_scan_ref = _mock_firestore()
         job = _make_job(status=JobStatus.QUEUED)
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             await sync_to_security_scan(job)
 
         call_args = mock_scan_ref.update.call_args[0][0]
@@ -78,7 +78,7 @@ class TestSyncToSecurityScan:
             progress=JobProgress(phase="crawling", spider_progress=50),
         )
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             await sync_to_security_scan(job)
 
         call_args = mock_scan_ref.update.call_args[0][0]
@@ -94,7 +94,7 @@ class TestSyncToSecurityScan:
             progress=JobProgress(phase="scanning", spider_progress=100, active_scan_progress=75),
         )
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             await sync_to_security_scan(job)
 
         call_args = mock_scan_ref.update.call_args[0][0]
@@ -124,7 +124,7 @@ class TestSyncToSecurityScan:
             progress=JobProgress(phase="completed", spider_progress=100, active_scan_progress=100),
         )
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             await sync_to_security_scan(job)
 
         call_args = mock_scan_ref.update.call_args[0][0]
@@ -145,7 +145,7 @@ class TestSyncToSecurityScan:
             progress=JobProgress(phase="failed"),
         )
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             await sync_to_security_scan(job)
 
         call_args = mock_scan_ref.update.call_args[0][0]
@@ -159,6 +159,6 @@ class TestSyncToSecurityScan:
         mock_scan_ref.update.side_effect = Exception("Firestore error")
         job = _make_job()
 
-        with patch("src.jobs.bridge._get_db", return_value=mock_db):
+        with patch("src.jobs.bridge._get_bridge_db", return_value=mock_db):
             # Should not raise
             await sync_to_security_scan(job)

@@ -41,11 +41,11 @@ _PHASE_STATUS_MAP: dict[str, str] = {
 }
 
 
-def _get_db() -> firestore.Client:
-    return firestore.Client(
-        project=settings.GCP_PROJECT,
-        database=settings.FIRESTORE_DATABASE,
-    )
+def _get_bridge_db(job: PentestJob) -> firestore.Client:
+    """Get Firestore client for the APP's database (where security-scans live)."""
+    project = job.source_firestore_project or settings.GCP_PROJECT
+    database = job.source_firestore_database or settings.FIRESTORE_DATABASE
+    return firestore.Client(project=project, database=database)
 
 
 async def sync_to_security_scan(job: PentestJob) -> None:
@@ -57,7 +57,7 @@ async def sync_to_security_scan(job: PentestJob) -> None:
     if not job.company_id or not job.scan_id:
         return
 
-    db = _get_db()
+    db = _get_bridge_db(job)
     scan_ref = (
         db.collection("companies")
         .document(job.company_id)

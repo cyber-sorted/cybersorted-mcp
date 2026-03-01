@@ -98,6 +98,10 @@ class PentestJob(BaseModel):
     company_id: str | None = None  # APP-sourced jobs
     scan_id: str | None = None  # Links to security-scans doc (APP only)
 
+    # APP source Firestore coordinates (for bridge sync)
+    source_firestore_project: str | None = None
+    source_firestore_database: str | None = None
+
     # Configuration
     config: JobConfig
 

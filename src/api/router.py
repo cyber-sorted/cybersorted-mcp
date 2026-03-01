@@ -36,6 +36,8 @@ class StartScanRequest(BaseModel):
     scan_id: str
     target_url: str
     scan_level: ScanLevel = ScanLevel.LIGHT
+    firestore_project: str | None = None
+    firestore_database: str | None = None
 
 
 class StartScanResponse(BaseModel):
@@ -108,6 +110,8 @@ async def start_scan(request: Request, body: StartScanRequest):
         container_image=settings.ZAP_WORKER_IMAGE,
         company_id=body.company_id,
         scan_id=body.scan_id,
+        source_firestore_project=body.firestore_project,
+        source_firestore_database=body.firestore_database,
     )
 
     # Dispatch the worker container
