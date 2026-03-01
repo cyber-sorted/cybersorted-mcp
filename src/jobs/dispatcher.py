@@ -79,7 +79,6 @@ async def launch_worker(
             remove=True,  # --rm
             mem_limit=mem_limit,
             nano_cpus=cpu_count * 1_000_000_000,  # Docker API uses nanocpus
-            stop_timeout=timeout_seconds,
             network_mode="bridge",
             labels={
                 "cybersorted.job_id": job_id,
