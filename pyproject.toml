@@ -1,6 +1,6 @@
 [project]
 name = "cybersorted-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "CyberSorted MCP Server - AI-powered security tools via any MCP client"
 requires-python = ">=3.12"
 license = "Apache-2.0"
@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.7",
     "httpx>=0.28",
     "dnspython>=2.7",
+    "docker>=7.0",
 ]
 
 [project.optional-dependencies]

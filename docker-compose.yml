@@ -20,6 +20,7 @@ services:
       - .env
     volumes:
       - ./credentials:/app/credentials:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "8080"
     restart: unless-stopped

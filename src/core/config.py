@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "dev"
     PORT: int = 8080
 
+    # Worker containers
+    ZAP_WORKER_IMAGE: str = "cybersorted/zap-worker:latest"
+    CREDENTIALS_PATH: str = "/app/credentials/gcp-wif-config.json"
+    MAX_CONCURRENT_SCANS: int = 3
+
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "prod"
