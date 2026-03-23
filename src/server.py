@@ -15,6 +15,7 @@ from mcp.server.fastmcp import FastMCP
 
 from src.api.internal_auth import InternalAuthError
 from src.api.router import router as scans_router
+from src.api.pipeline_router import router as pipeline_router
 from src.auth.middleware import AuthError
 from src.core.config import settings
 from src.tools.recon.passive import recon_passive
@@ -90,7 +91,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="CyberSorted MCP",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -102,7 +103,7 @@ async def health() -> dict:
         "status": "healthy",
         "service": "cybersorted-mcp",
         "environment": settings.ENVIRONMENT,
-        "version": "0.2.0",
+        "version": "0.3.0",
     }
 
 
@@ -117,9 +118,10 @@ async def internal_auth_error_handler(request: Request, exc: InternalAuthError) 
 
 
 # --- REST API ---
-# APP-facing endpoints for scan dispatch and status
+# APP-facing endpoints for scan dispatch, status, and pipeline
 
 app.include_router(scans_router)
+app.include_router(pipeline_router)
 
 
 # --- MCP Transport ---
