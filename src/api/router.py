@@ -8,6 +8,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, Request
@@ -24,6 +25,47 @@ from src.jobs.models import JobConfig, JobSource, JobStatus, ScanLevel
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/scans")
+
+# Background watcher tuning (mirrors the MCP tool's poll loop).
+POLL_INTERVAL_SECONDS = 5
+MAX_POLL_DURATION_SECONDS = 3600  # 1 hour
+
+
+async def _watch_and_sync(job_id: str) -> None:
+    """Poll a dispatched APP job to completion, bridging state to security-scans.
+
+    The APP polls `companies/{id}/security-scans` directly — not this service —
+    so without this watcher a completed worker's progress and final results would
+    never reach the UI and the scan would appear to run forever. Syncs on every
+    poll (for live progress) and once more on the terminal state.
+    """
+    elapsed = 0
+    while elapsed < MAX_POLL_DURATION_SECONDS:
+        await asyncio.sleep(POLL_INTERVAL_SECONDS)
+        elapsed += POLL_INTERVAL_SECONDS
+
+        job = await get_job(job_id)
+        if not job:
+            logger.warning("Watcher: job %s disappeared before completion", job_id)
+            return
+
+        await sync_to_security_scan(job)
+
+        if job.status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED):
+            logger.info(
+                "Watcher: job %s reached %s — synced to security-scans",
+                job_id, job.status.value,
+            )
+            return
+
+    # Exceeded the hard timeout — mark failed and sync the terminal state.
+    logger.warning(
+        "Watcher: job %s exceeded %ss, marking failed", job_id, MAX_POLL_DURATION_SECONDS
+    )
+    await fail_job(job_id, "Scan timed out after 1 hour")
+    timed_out = await get_job(job_id)
+    if timed_out:
+        await sync_to_security_scan(timed_out)
 
 
 # --- Request/Response Models ---
@@ -140,6 +182,10 @@ async def start_scan(request: Request, body: StartScanRequest):
             status_code=503,
             content={"error": str(exc), "job_id": job.job_id},
         )
+
+    # Bridge job progress/results to security-scans in the background so the
+    # APP UI (which polls security-scans, not this service) reflects completion.
+    asyncio.create_task(_watch_and_sync(job.job_id))
 
     return StartScanResponse(job_id=job.job_id)
 
